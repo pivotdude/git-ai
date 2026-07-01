@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/pivotdude/git-ai/main/config.schema.json",
+  "title": "git-ai project config",
+  "description": "Optional settings in .git-ai/config.json at the git repository root.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URL or path for editor validation."
+    },
+    "baseBranch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Default base branch for create-pr / update-pr diff and PR target.",
+      "default": "main"
+    },
+    "diffIgnore": {
+      "type": "array",
+      "description": "Extra .gitignore-style patterns omitted from AI diffs. Merged with .git-ai/diff-ignore and built-in lockfile defaults.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "conventions": {
+      "type": ["string", "null"],
+      "description": "Repo-relative path to commit/branch conventions markdown. Null uses .git-ai/conventions.md or the bundled default."
+    },
+    "prTemplate": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative path to the pull request template markdown.",
+      "default": ".github/PULL_REQUEST_TEMPLATE.md"
+    },
+    "stagedFix": {
+      "type": "object",
+      "description": "Optional lint/format commands run before commit. Executes arbitrary shell from the repository root.",
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stagedFixRule" },
+          "default": []
+        },
+        "root": {
+          "oneOf": [{ "$ref": "#/$defs/stagedFixRule" }, { "type": "null" }],
+          "default": null
+        }
+      },
+      "default": { "rules": [], "root": null }
+    }
+  },
+  "$defs": {
+    "stagedFixRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths", "command"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "description": ".gitignore-style path patterns. Command runs when any staged file matches.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Shell command executed from the repository root (sh -c)."
+        }
+      }
+    }
+  }
+}

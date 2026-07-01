@@ -1,0 +1,10 @@
+# .gitignore-style patterns omitted from AI diff prompts.
+# Merged with built-in lockfile defaults.
+
+bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated assets
+# dist/**

@@ -1,0 +1,14 @@
+{
+  "$schema": "../config.schema.json",
+  "baseBranch": "main",
+  "prTemplate": ".github/PULL_REQUEST_TEMPLATE.md",
+  "stagedFix": {
+    "rules": [
+      {
+        "paths": ["src/**"],
+        "command": "npm run lint:fix"
+      }
+    ],
+    "root": null
+  }
+}
