@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-07-01
+
+### Changed
+
+- Publish as unscoped `pivotdude-git-ai` on npm (scoped `@pivotdude/git-ai` was private and not installable).
+
 ## [1.0.0] - 2026-07-01
 
 ### Added
