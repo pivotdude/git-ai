@@ -7,9 +7,9 @@ Requires [Bun](https://bun.sh) >= 1.3 and `git` / `gh` on `PATH` for the full wo
 ## Install
 
 ```bash
-npm i -g git-ai
+npm i -g @pivotdude/git-ai
 # or
-bun add -g git-ai
+bun add -g @pivotdude/git-ai
 ```
 
 Run from any directory inside a git repository:
