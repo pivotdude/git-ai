@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-07-01
+
+### Fixed
+
+- CLI entrypoint now calls `run()` from `bin/git-ai.js` (import-only build exited silently).
+
 ## [1.0.1] - 2026-07-01
 
 ### Changed
