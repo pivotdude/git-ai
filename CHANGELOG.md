@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-07-01
+
+### Fixed
+
+- Republish to refresh npm registry metadata for package managers.
+
 ## [1.0.2] - 2026-07-01
 
 ### Fixed
