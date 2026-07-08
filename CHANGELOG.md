@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 
 - OpenAI-compatible providers that return reasoning in `reasoning_content` now auto-retry with a higher token limit when the final `content` is empty due to `finish_reason: length`.
 - Clear error when reasoning models exhaust the token budget without producing final content.
+- String `cost` fields from providers (e.g. Manifest `"cost": "0"`) are coerced before token summary formatting.
 
 ## [1.0.3] - 2026-07-01
 

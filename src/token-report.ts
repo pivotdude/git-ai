@@ -29,10 +29,12 @@ export function formatTokenCount(count: number): string {
 }
 
 export function formatUsd(cost: number): string {
-  if (cost === 0) return '$0';
-  if (cost < 0.01) return `$${cost.toFixed(4)}`;
-  if (cost < 1) return `$${cost.toFixed(3)}`;
-  return `$${cost.toFixed(2)}`;
+  const value = Number(cost);
+  if (!Number.isFinite(value)) return '$0';
+  if (value === 0) return '$0';
+  if (value < 0.01) return `$${value.toFixed(4)}`;
+  if (value < 1) return `$${value.toFixed(3)}`;
+  return `$${value.toFixed(2)}`;
 }
 
 function joinParts(parts: string[]): string {

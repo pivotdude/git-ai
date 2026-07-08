@@ -51,4 +51,22 @@ describe('parseChatCompletionUsage', () => {
       costUsd: 0.0012,
     });
   });
+
+  test('coerces string cost fields from providers such as Manifest', () => {
+    expect(
+      parseChatCompletionUsage({
+        usage: {
+          prompt_tokens: 88,
+          completion_tokens: 50,
+          total_tokens: 138,
+        },
+        cost: '0',
+      }),
+    ).toEqual({
+      promptTokens: 88,
+      completionTokens: 50,
+      totalTokens: 138,
+      costUsd: 0,
+    });
+  });
 });

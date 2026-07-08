@@ -4,8 +4,8 @@ interface ChatCompletionUsage {
   prompt_tokens?: number;
   completion_tokens?: number;
   total_tokens?: number;
-  cost?: number;
-  total_cost?: number;
+  cost?: number | string;
+  total_cost?: number | string;
 }
 
 interface ChatCompletionResponse {
@@ -15,16 +15,23 @@ interface ChatCompletionResponse {
     };
   }>;
   usage?: ChatCompletionUsage;
-  cost?: number;
+  cost?: number | string;
+}
+
+function coerceUsdCost(value: number | string | undefined): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 export function parseChatCompletionUsage(json: ChatCompletionResponse): TokenUsage | undefined {
   const usage = json.usage;
-  const costUsd =
-    usage?.cost ??
-    usage?.total_cost ??
-    json.cost ??
-  undefined;
+  const costUsd = coerceUsdCost(usage?.cost ?? usage?.total_cost ?? json.cost);
 
   if (!usage && costUsd === undefined) return undefined;
 
