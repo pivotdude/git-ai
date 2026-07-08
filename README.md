@@ -28,7 +28,7 @@ Optional files at the **git repository root**:
 
 | Path | Purpose |
 |------|---------|
-| `.git-ai/config.json` | `baseBranch`, `stagedFix`, optional `conventions` / `prTemplate` paths ([JSON Schema](config.schema.json)) |
+| `.git-ai/config.json` | `baseBranch`, `stagedFix`, optional `conventions` / `prTemplate` / `ai` paths ([JSON Schema](config.schema.json)) |
 | `.git-ai/diff-ignore` | `.gitignore`-style patterns omitted from AI diffs (merged with built-in lockfile defaults) |
 | `.git-ai/prompts/*.md` | Per-mode prompt overrides (`commit-push.md`, `create-pr.md`, …) |
 | `.git-ai/conventions.md` | Commit/branch conventions when `conventions` is not set in `config.json` |
@@ -79,6 +79,46 @@ Before applying, you can **edit** individual fields (branch, commit message, PR 
 Uses `$VISUAL` or `$EDITOR` (default `nano`) for manual provider responses and pre-apply edits.
 
 When the API returns token usage (OpenAI-compatible providers), git-ai prints a one-line `[tokens]` summary with in/out/total counts. Cost is shown only when included in the response (e.g. some OpenRouter payloads).
+
+### `ai.maxTokens` (project config)
+
+Override completion token limits per repository in `.git-ai/config.json`:
+
+```json
+{
+  "ai": {
+    "maxTokens": 4096,
+    "maxTokensByMode": {
+      "commit-push": 3000
+    },
+    "reasoning": "off"
+  }
+}
+```
+
+Resolution order for token limits: `maxTokensByMode[mode]` → `maxTokens` → built-in default for the mode.
+
+`reasoning` controls thinking level. `reasoningProfile` overrides how that level is encoded in the request (default: auto-detect from `OPENAI_BASE_URL`):
+
+| Host match | Profile | `off` encoding |
+|------------|---------|----------------|
+| `api.openai.com` | `openai` | omit reasoning fields |
+| `openrouter.ai` | `openrouter` | `reasoning.effort=none` |
+| `api.deepseek.com` | `deepseek` | `thinking.type=disabled` |
+| anything else (Manifest, custom proxy) | `compatible` | `thinking.type=disabled` + `reasoning.effort=none` |
+
+Override in `.git-ai/config.json`:
+
+```json
+{
+  "ai": {
+    "reasoning": "off",
+    "reasoningProfile": "compatible"
+  }
+}
+```
+
+Reasoning models may need higher `maxTokens` because thinking tokens count toward the limit before the final answer lands in `content`.
 
 ## Development
 

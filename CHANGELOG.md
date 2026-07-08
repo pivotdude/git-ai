@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2026-07-08
+
+### Added
+
+- `.git-ai/config.json` `ai.maxTokens` and `ai.maxTokensByMode` to override completion limits per repo/mode.
+- `.git-ai/config.json` `ai.reasoning` (`off` | `on` | `low` | `medium` | `high`) and optional `ai.reasoningProfile` (`openai` | `openrouter` | `deepseek` | `compatible`). Profile auto-detects from `OPENAI_BASE_URL` host; unknown hosts use `compatible` (OpenRouter + DeepSeek request fields).
+
+### Changed
+
+- Default `max_tokens` for commit modes (`commit-push`, `branch-commit-push`) raised from 500 to 2048.
+
+### Fixed
+
+- OpenAI-compatible providers that return reasoning in `reasoning_content` now auto-retry with a higher token limit when the final `content` is empty due to `finish_reason: length`.
+- Clear error when reasoning models exhaust the token budget without producing final content.
+
 ## [1.0.3] - 2026-07-01
 
 ### Fixed

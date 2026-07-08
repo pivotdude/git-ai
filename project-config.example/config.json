@@ -2,6 +2,12 @@
   "$schema": "../config.schema.json",
   "baseBranch": "main",
   "prTemplate": ".github/PULL_REQUEST_TEMPLATE.md",
+  "ai": {
+    "reasoning": "off",
+    "maxTokensByMode": {
+      "commit-push": 4096
+    }
+  },
   "stagedFix": {
     "rules": [
       {

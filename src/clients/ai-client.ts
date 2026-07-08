@@ -1,4 +1,10 @@
 import type { AiSource, AiResponse, OpenAiConfig } from '../types';
+import { buildReasoningRequestBodyForBaseUrl, resolveReasoningLevel } from '../ai-reasoning';
+import { getProjectConfig } from '../project-config';
+import {
+  escalateMaxTokens,
+  parseChatCompletionChoice,
+} from './chat-completion-content';
 import { parseChatCompletionUsage } from './openai-usage';
 
 const MAX_ATTEMPTS = 10;
@@ -6,8 +12,10 @@ const RETRY_BASE_DELAY_MS = 1500;
 
 interface ChatCompletionResponse {
   choices?: Array<{
+    finish_reason?: string | null;
     message?: {
       content?: string | null;
+      reasoning_content?: string | null;
     };
   }>;
   usage?: {
@@ -26,6 +34,7 @@ function sleep(ms: number): Promise<void> {
 
 function isRetryableError(error: Error): boolean {
   if (error.message === 'Empty response from AI') return true;
+  if (error.message.startsWith('AI used all tokens on reasoning')) return false;
 
   const statusMatch = error.message.match(/AI request failed \((\d+)\)/);
   if (!statusMatch) return true;
@@ -36,6 +45,16 @@ function isRetryableError(error: Error): boolean {
 
 function retryDelayMs(attempt: number): number {
   return RETRY_BASE_DELAY_MS * attempt;
+}
+
+function emptyResponseError(parsed: ReturnType<typeof parseChatCompletionChoice>): Error {
+  if (parsed.hasReasoningOnly) {
+    return new Error(
+      'AI used all tokens on reasoning; increase ai.maxTokens in .git-ai/config.json or use a non-reasoning model'
+    );
+  }
+
+  return new Error('Empty response from AI');
 }
 
 export class AiClient implements AiSource {
@@ -64,6 +83,54 @@ export class AiClient implements AiSource {
   }
 
   private async requestOnce(prompt: string, maxTokens: number): Promise<AiResponse> {
+    const first = await this.fetchCompletion(prompt, maxTokens);
+    const parsed = parseChatCompletionChoice(first.json.choices?.[0]);
+
+    if (parsed.content) {
+      return {
+        content: parsed.content,
+        usage: parseChatCompletionUsage(first.json),
+      };
+    }
+
+    if (parsed.shouldEscalateTokens) {
+      const escalated = escalateMaxTokens(maxTokens);
+      if (escalated > maxTokens) {
+        const second = await this.fetchCompletion(prompt, escalated);
+        const retryParsed = parseChatCompletionChoice(second.json.choices?.[0]);
+        if (retryParsed.content) {
+          return {
+            content: retryParsed.content,
+            usage: parseChatCompletionUsage(second.json),
+          };
+        }
+      }
+    }
+
+    throw emptyResponseError(parsed);
+  }
+
+  private async fetchCompletion(
+    prompt: string,
+    maxTokens: number,
+  ): Promise<{ json: ChatCompletionResponse }> {
+    let reasoningLevel = resolveReasoningLevel({});
+    let aiConfig = {};
+
+    try {
+      const project = getProjectConfig();
+      reasoningLevel = resolveReasoningLevel(project.ai);
+      aiConfig = project.ai;
+    } catch {
+      // Project config not loaded; use default reasoning level.
+    }
+
+    const reasoningBody = buildReasoningRequestBodyForBaseUrl(
+      reasoningLevel,
+      this.config.baseUrl,
+      aiConfig,
+    );
+
     let res: Response;
     try {
       res = await fetch(`${this.config.baseUrl}/chat/completions`, {
@@ -77,9 +144,7 @@ export class AiClient implements AiSource {
           messages: [{ role: 'user', content: prompt }],
           temperature: 1.0,
           max_tokens: maxTokens,
-          // provider: {
-          //   order: ['deepinfra'],
-          // },
+          ...reasoningBody,
         }),
       });
     } catch (error) {
@@ -92,13 +157,6 @@ export class AiClient implements AiSource {
       throw new Error(`AI request failed (${res.status}): ${body}`);
     }
 
-    const json = (await res.json()) as ChatCompletionResponse;
-    const content = json.choices?.[0]?.message?.content?.trim();
-    if (!content) throw new Error('Empty response from AI');
-
-    return {
-      content,
-      usage: parseChatCompletionUsage(json),
-    };
+    return { json: (await res.json()) as ChatCompletionResponse };
   }
 }
