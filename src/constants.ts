@@ -15,12 +15,12 @@ export const MODE_META: Record<Mode, ModeMeta> = {
   'branch-commit-push': {
     label: 'Staged → new branch → commit → push',
     help: 'Staged changes: create branch, commit, push',
-    maxTokens: 500,
+    maxTokens: 2048,
   },
   'commit-push': {
     label: 'Staged → current branch → commit → push',
     help: 'Staged changes: commit and push on current branch',
-    maxTokens: 500,
+    maxTokens: 2048,
   },
   'create-pr': {
     label: 'Branch → PR',

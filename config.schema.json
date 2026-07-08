@@ -51,6 +51,43 @@
         }
       },
       "default": { "rules": [], "root": null }
+    },
+    "ai": {
+      "type": "object",
+      "description": "AI request settings for OpenAI-compatible providers.",
+      "additionalProperties": false,
+      "properties": {
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384,
+          "description": "Override max_tokens for every mode unless maxTokensByMode sets a mode-specific value."
+        },
+        "maxTokensByMode": {
+          "type": "object",
+          "description": "Per-mode max_tokens overrides. Keys: branch-commit-pr, branch-commit-push, commit-push, create-pr, update-pr.",
+          "additionalProperties": false,
+          "properties": {
+            "branch-commit-pr": { "type": "integer", "minimum": 1, "maximum": 16384 },
+            "branch-commit-push": { "type": "integer", "minimum": 1, "maximum": 16384 },
+            "commit-push": { "type": "integer", "minimum": 1, "maximum": 16384 },
+            "create-pr": { "type": "integer", "minimum": 1, "maximum": 16384 },
+            "update-pr": { "type": "integer", "minimum": 1, "maximum": 16384 }
+          }
+        },
+        "reasoning": {
+          "type": "string",
+          "enum": ["off", "on", "low", "medium", "high"],
+          "default": "off",
+          "description": "Reasoning / thinking level for OpenAI-compatible providers."
+        },
+        "reasoningProfile": {
+          "type": "string",
+          "enum": ["openai", "openrouter", "deepseek", "compatible"],
+          "description": "Override reasoning request encoding. Default: auto-detect from OPENAI_BASE_URL host; unknown hosts use compatible (OpenRouter + DeepSeek fields)."
+        }
+      },
+      "default": {}
     }
   },
   "$defs": {

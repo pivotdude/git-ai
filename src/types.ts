@@ -2,6 +2,15 @@ export type Mode = 'branch-commit-pr' | 'branch-commit-push' | 'commit-push' | '
 
 export type AiProvider = 'openai' | 'cursor-sdk' | 'manual';
 
+/** Reasoning / thinking level for OpenAI-compatible chat completions. */
+export type ReasoningLevel = 'off' | 'on' | 'low' | 'medium' | 'high';
+
+/**
+ * How to encode reasoning controls in chat completion requests.
+ * `compatible` is the default fallback for unknown hosts (OpenRouter + DeepSeek fields).
+ */
+export type ReasoningApiProfile = 'openai' | 'openrouter' | 'deepseek' | 'compatible';
+
 export interface OpenAiConfig {
   baseUrl: string;
   apiKey: string;

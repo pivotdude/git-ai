@@ -30,4 +30,5 @@ export const DEFAULT_PROJECT_CONFIG: GitAiProjectConfig = {
     rules: [],
     root: null,
   },
+  ai: {},
 };

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { Mode, ReasoningApiProfile, ReasoningLevel } from './types';
 import {
   CONFIG_FILE,
   DEFAULT_DIFF_IGNORE_PATTERNS,
@@ -24,6 +25,23 @@ export interface StagedFixConfig {
   root: StagedFixRule | null;
 }
 
+export interface AiProjectConfig {
+  /** Override max_tokens for every mode unless a mode-specific value is set. */
+  maxTokens?: number;
+  /** Per-mode max_tokens overrides (commit-push, create-pr, …). */
+  maxTokensByMode?: Partial<Record<Mode, number>>;
+  /**
+   * Reasoning / thinking level for OpenAI-compatible providers.
+   * Default: off (thinking disabled on proxies such as Manifest).
+   */
+  reasoning?: ReasoningLevel;
+  /**
+   * Override auto-detected reasoning request encoding.
+   * Default: inferred from OPENAI_BASE_URL host; unknown hosts use `compatible`.
+   */
+  reasoningProfile?: ReasoningApiProfile;
+}
+
 export interface GitAiProjectConfig {
   baseBranch: string;
   diffIgnore: string[];
@@ -32,6 +50,7 @@ export interface GitAiProjectConfig {
   /** Repo-relative PR template path. */
   prTemplate: string;
   stagedFix: StagedFixConfig;
+  ai: AiProjectConfig;
 }
 
 /** Partial shape accepted in .git-ai/config.json (or legacy .git-ai.json). */
@@ -44,6 +63,7 @@ export interface GitAiProjectConfigInput {
     rules?: StagedFixRule[];
     root?: StagedFixRule | null;
   };
+  ai?: AiProjectConfig;
 }
 
 let loadedConfig: GitAiProjectConfig | null = null;
@@ -51,6 +71,15 @@ let projectDirPath: string | null = null;
 
 function uniquePatterns(patterns: readonly string[]): string[] {
   return [...new Set(patterns)];
+}
+
+function mergeAiConfig(input: AiProjectConfig | undefined): AiProjectConfig {
+  return {
+    maxTokens: input?.maxTokens,
+    maxTokensByMode: input?.maxTokensByMode ? { ...input.maxTokensByMode } : undefined,
+    reasoning: input?.reasoning,
+    reasoningProfile: input?.reasoningProfile,
+  };
 }
 
 function mergeConfig(input: GitAiProjectConfigInput | undefined): Omit<GitAiProjectConfig, 'diffIgnore'> {
@@ -64,6 +93,7 @@ function mergeConfig(input: GitAiProjectConfigInput | undefined): Omit<GitAiProj
       rules: stagedFixInput?.rules ?? [...DEFAULT_PROJECT_CONFIG.stagedFix.rules],
       root: stagedFixInput?.root === undefined ? DEFAULT_PROJECT_CONFIG.stagedFix.root : stagedFixInput.root,
     },
+    ai: mergeAiConfig(input?.ai),
   };
 }
 

@@ -1,5 +1,6 @@
 import type { Mode } from './types';
-import { getBaseBranchOrDefault } from './project-config';
+import type { AiProjectConfig } from './project-config';
+import { getBaseBranchOrDefault, getProjectConfig } from './project-config';
 import { MODE_META, type ModeMeta } from './constants';
 
 export function getModeMeta(mode: Mode, baseBranch = getBaseBranchOrDefault()): ModeMeta {
@@ -23,6 +24,17 @@ export function getModeMeta(mode: Mode, baseBranch = getBaseBranchOrDefault()): 
   return meta;
 }
 
-export function getMaxTokens(mode: Mode): number {
+export function resolveMaxTokens(mode: Mode, ai: AiProjectConfig): number {
+  const byMode = ai.maxTokensByMode?.[mode];
+  if (byMode !== undefined) return byMode;
+  if (ai.maxTokens !== undefined) return ai.maxTokens;
   return MODE_META[mode].maxTokens;
+}
+
+export function getMaxTokens(mode: Mode): number {
+  try {
+    return resolveMaxTokens(mode, getProjectConfig().ai);
+  } catch {
+    return MODE_META[mode].maxTokens;
+  }
 }
