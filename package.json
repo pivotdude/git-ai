@@ -1,6 +1,6 @@
 {
   "name": "pivotdude-git-ai",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "AI-assisted git workflows: commit messages, branches, and pull requests",
   "keywords": [
     "git",
