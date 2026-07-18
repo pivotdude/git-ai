@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-07-18
+
+### Added
+
+- `--yes` / `-y` flag to skip yes/no confirmations and apply the AI draft automatically (including cached draft reuse and manual provider copy step).
+
 ## [1.0.5] - 2026-07-08
 
 ### Fixed
