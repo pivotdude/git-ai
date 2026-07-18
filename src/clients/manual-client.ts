@@ -49,8 +49,17 @@ async function collectManualResponseInteractive(
   prompt: string,
   promptPath: string,
   responsePath: string,
+  assumeYes = false,
 ): Promise<string> {
   const editor = resolveEditor();
+
+  if (assumeYes) {
+    await copyToClipboard(prompt);
+    console.log('[MANUAL] Prompt copied to clipboard.');
+    console.log(`[MANUAL] Opening ${editor}...`);
+    return await collectResponseFromEditor(responsePath);
+  }
+
   const action = await promptForManualPromptAction(editor);
 
   if (action === 'cancel') {
@@ -74,6 +83,8 @@ async function collectManualResponseInteractive(
 }
 
 export class ManualAiClient implements AiSource {
+  constructor(private readonly assumeYes = false) {}
+
   async ask(prompt: string, _maxTokens: number): Promise<AiResponse> {
     const promptPath = tempFile('git-ai-prompt', 'md');
     const responsePath = tempFile('git-ai-response', 'md');
@@ -83,7 +94,14 @@ export class ManualAiClient implements AiSource {
       await Bun.write(responsePath, RESPONSE_HEADER);
 
       if (process.stdin.isTTY && process.stdout.isTTY) {
-        return { content: await collectManualResponseInteractive(prompt, promptPath, responsePath) };
+        return {
+          content: await collectManualResponseInteractive(
+            prompt,
+            promptPath,
+            responsePath,
+            this.assumeYes,
+          ),
+        };
       }
 
       return { content: await collectResponseFromStdin() };

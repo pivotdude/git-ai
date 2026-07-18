@@ -82,6 +82,7 @@ export async function printHelp() {
       '',
       'Flags:',
       '  --dry-run, -n             Print the AI prompt only (no AI call, no git actions)',
+      '  --yes, -y                 Skip yes/no confirmations and apply the AI draft',
       '',
       'Modes:',
       ...modeLines,
@@ -98,6 +99,10 @@ export async function printHelp() {
 
 export function parseDryRunFromArgs(args: string[]): boolean {
   return args.includes('--dry-run') || args.includes('-n');
+}
+
+export function parseYesFromArgs(args: string[]): boolean {
+  return args.includes('--yes') || args.includes('-y');
 }
 
 export function printDryRunPrompt(promptText: string): void {
@@ -468,7 +473,9 @@ export async function promptForEditField<T extends string>(
   return choice === 'back' ? null : choice;
 }
 
-export async function promptForCachedDraftReuse(): Promise<boolean> {
+export async function promptForCachedDraftReuse(assumeYes = false): Promise<boolean> {
+  if (assumeYes) return true;
+
   return promptSelection<boolean>({
     headerLines: [
       sectionTitle('[CACHE] Matching staged changes found'),

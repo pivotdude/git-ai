@@ -201,11 +201,16 @@ export async function confirmParsedResult(
   mode: Mode,
   initial: ParsedResult,
   preview: (result: ParsedResult) => void,
+  options: { assumeYes?: boolean } = {},
 ): Promise<ParsedResult | null> {
   let result = initial;
 
   while (true) {
     preview(result);
+
+    if (options.assumeYes) {
+      return result;
+    }
 
     const action = await promptForExecutionConfirmation();
     if (action === 'no') return null;

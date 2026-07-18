@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { parseDryRunFromArgs } from './cli';
+import { parseDryRunFromArgs, parseYesFromArgs } from './cli';
 
 // Mirror of cli.ts fallback parser for unit tests.
 function parseExecutionConfirmationInput(raw: string | null | undefined): 'yes' | 'no' | 'edit' | null {
@@ -23,6 +23,20 @@ describe('parseDryRunFromArgs', () => {
 
   test('returns false when flag is absent', () => {
     expect(parseDryRunFromArgs(['--mode', 'commit-push'])).toBe(false);
+  });
+});
+
+describe('parseYesFromArgs', () => {
+  test('detects --yes', () => {
+    expect(parseYesFromArgs(['--yes', '--mode', 'commit-push'])).toBe(true);
+  });
+
+  test('detects -y', () => {
+    expect(parseYesFromArgs(['-y', '--mode', 'create-pr'])).toBe(true);
+  });
+
+  test('returns false when flag is absent', () => {
+    expect(parseYesFromArgs(['--mode', 'commit-push'])).toBe(false);
   });
 });
 

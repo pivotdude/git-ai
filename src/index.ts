@@ -5,6 +5,7 @@ import {
   parseDryRunFromArgs,
   parseModeFromArgs,
   parseProviderFromArgs,
+  parseYesFromArgs,
   printAiPreview,
   printDryRunPrompt,
   printHelp,
@@ -42,7 +43,13 @@ async function runDryRun(git: GitClient, branch: string, mode: Mode): Promise<vo
   printDryRunPrompt(promptText);
 }
 
-async function runBranchPr(git: GitClient, provider: AiProvider, branch: string, mode: 'create-pr' | 'update-pr'): Promise<void> {
+async function runBranchPr(
+  git: GitClient,
+  provider: AiProvider,
+  branch: string,
+  mode: 'create-pr' | 'update-pr',
+  assumeYes: boolean,
+): Promise<void> {
   const { baseBranch } = getProjectConfig();
   let prNumber: number | undefined;
 
@@ -60,7 +67,7 @@ async function runBranchPr(git: GitClient, provider: AiProvider, branch: string,
   const promptText = await buildBranchPrPrompt(git, branch, mode);
   if (!promptText) return;
 
-  const ai = createAiSource(provider);
+  const ai = createAiSource(provider, { assumeYes });
   const maxTokens = getMaxTokens(mode);
   const response =
     provider === 'manual'
@@ -74,9 +81,14 @@ async function runBranchPr(git: GitClient, provider: AiProvider, branch: string,
     throw new Error(`Unexpected ${mode} result: ${result.mode}`);
   }
 
-  const confirmed = await confirmParsedResult(mode, result, (draft) => {
-    printAiPreview(branch, draft, baseBranch, prNumber);
-  });
+  const confirmed = await confirmParsedResult(
+    mode,
+    result,
+    (draft) => {
+      printAiPreview(branch, draft, baseBranch, prNumber);
+    },
+    { assumeYes },
+  );
   if (!confirmed) {
     console.log('Canceled. No git actions were executed.');
     return;
@@ -99,7 +111,13 @@ async function runBranchPr(git: GitClient, provider: AiProvider, branch: string,
   await executeCreatePr(git, branch, baseBranch, result);
 }
 
-async function runStagedWorkflow(git: GitClient, provider: AiProvider, branch: string, mode: Mode): Promise<void> {
+async function runStagedWorkflow(
+  git: GitClient,
+  provider: AiProvider,
+  branch: string,
+  mode: Mode,
+  assumeYes: boolean,
+): Promise<void> {
   const inputs = await readStagedPromptInputs(git);
   if (!inputs) return;
 
@@ -111,7 +129,7 @@ async function runStagedWorkflow(git: GitClient, provider: AiProvider, branch: s
   let result;
 
   if (cached) {
-    const reuse = await promptForCachedDraftReuse();
+    const reuse = await promptForCachedDraftReuse(assumeYes);
     if (reuse) {
       result = cached.result;
       console.log('');
@@ -124,7 +142,7 @@ async function runStagedWorkflow(git: GitClient, provider: AiProvider, branch: s
       buildPrompt(mode, stat, diff, conventions),
     );
 
-    const ai = createAiSource(provider);
+    const ai = createAiSource(provider, { assumeYes });
     const maxTokens = getMaxTokens(mode);
     const response =
       provider === 'manual'
@@ -135,9 +153,14 @@ async function runStagedWorkflow(git: GitClient, provider: AiProvider, branch: s
     await saveCachedDraft(fingerprint, mode, result);
   }
 
-  const confirmed = await confirmParsedResult(mode, result, (draft) => {
-    printAiPreview(branch, draft);
-  });
+  const confirmed = await confirmParsedResult(
+    mode,
+    result,
+    (draft) => {
+      printAiPreview(branch, draft);
+    },
+    { assumeYes },
+  );
   if (!confirmed) {
     console.log('Canceled. No git actions were executed.');
     return;
@@ -173,6 +196,7 @@ export async function run(forcedMode?: Mode): Promise<void> {
   }
 
   const dryRun = parseDryRunFromArgs(args);
+  const assumeYes = parseYesFromArgs(args);
 
   await loadProjectConfig();
 
@@ -192,11 +216,11 @@ export async function run(forcedMode?: Mode): Promise<void> {
   console.log(`AI provider: ${PROVIDER_META[provider].label}\n`);
 
   if (mode === 'create-pr' || mode === 'update-pr') {
-    await runBranchPr(git, provider, branch, mode);
+    await runBranchPr(git, provider, branch, mode, assumeYes);
     return;
   }
 
-  await runStagedWorkflow(git, provider, branch, mode);
+  await runStagedWorkflow(git, provider, branch, mode, assumeYes);
 }
 
 if (import.meta.main) {
