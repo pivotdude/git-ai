@@ -149,19 +149,26 @@ export function getEditableFields(result: ParsedResult): EditableField[] {
   return editableFieldsForResult(result);
 }
 
+/** Strip editor instruction comments without removing markdown headings (# / ## / ###). */
 export function stripEditComments(content: string): string {
   return content
     .split('\n')
-    .filter((line) => !line.trimStart().startsWith('#'))
+    .filter((line) => !/^\s*<!--.*?-->\s*$/.test(line))
     .join('\n')
     .trim();
+}
+
+function editorInstructionComment(hint: string): string {
+  // HTML comments cannot contain `--`.
+  const safeHint = hint.replaceAll('--', '—');
+  return `<!-- ${safeHint} -->`;
 }
 
 async function editTextInEditor(hint: string, initial: string): Promise<string> {
   const editPath = tempFile('git-ai-edit', 'md');
 
   try {
-    await Bun.write(editPath, `# ${hint}\n\n${initial}`);
+    await Bun.write(editPath, `${editorInstructionComment(hint)}\n\n${initial}`);
     console.log(`Opening ${resolveEditor()}...`);
     await openFileInEditor(editPath);
 

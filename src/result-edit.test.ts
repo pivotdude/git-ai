@@ -68,11 +68,33 @@ describe('getEditableFields', () => {
 });
 
 describe('stripEditComments', () => {
-  test('removes comment lines', () => {
+  test('removes HTML instruction comments but keeps markdown headings', () => {
     expect(
-      stripEditComments(`# header
-feat(cli): message
-# inline note ignored only at line start`),
-    ).toBe('feat(cli): message');
+      stripEditComments(`<!-- Edit PR description. Save and close when done. -->
+## Summary
+- Detail one
+### Notes
+More text`),
+    ).toBe(`## Summary
+- Detail one
+### Notes
+More text`);
+  });
+
+  test('preserves markdown headings in manual AI responses', () => {
+    expect(
+      stripEditComments(`<!-- Paste the AI response below this line, save, and close the editor. -->
+PR_TITLE: feat(git-ai): Keep markdown headings
+PR_DESC:
+## Summary
+- Keeps # / ## / ### in PR body
+### Test plan
+- [ ] Preview shows headings`),
+    ).toBe(`PR_TITLE: feat(git-ai): Keep markdown headings
+PR_DESC:
+## Summary
+- Keeps # / ## / ### in PR body
+### Test plan
+- [ ] Preview shows headings`);
   });
 });

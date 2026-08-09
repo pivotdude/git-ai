@@ -5,7 +5,8 @@ import { stripEditComments } from '../result-edit';
 import { safeUnlink, tempFile } from '../temp-files';
 import type { AiSource, AiResponse } from '../types';
 
-const RESPONSE_HEADER = '# Paste the AI response below this line, save, and close the editor.\n\n';
+const RESPONSE_HEADER =
+  '<!-- Paste the AI response below this line, save, and close the editor. -->\n\n';
 
 async function readStdinUntilEof(): Promise<string> {
   return await new Promise((resolve, reject) => {
@@ -22,7 +23,7 @@ async function readStdinUntilEof(): Promise<string> {
 async function collectResponseFromEditor(responsePath: string): Promise<string> {
   await openFileInEditor(responsePath);
 
-  const content = stripEditComments((await readFileText(responsePath)).replace(RESPONSE_HEADER, ''));
+  const content = stripEditComments(await readFileText(responsePath));
   if (!content) throw new Error('Empty manual AI response');
   return content;
 }
