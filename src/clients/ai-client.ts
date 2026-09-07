@@ -58,7 +58,13 @@ function emptyResponseError(parsed: ReturnType<typeof parseChatCompletionChoice>
 }
 
 export class AiClient implements AiSource {
-  constructor(private readonly config: OpenAiConfig) {}
+  private readonly sessionId?: string;
+
+  constructor(private readonly config: OpenAiConfig) {
+    if (config.baseUrl.includes('opencode.ai/zen/go')) {
+      this.sessionId = crypto.randomUUID();
+    }
+  }
 
   async ask(prompt: string, maxTokens: number): Promise<AiResponse> {
     let lastError: Error | undefined;
@@ -131,14 +137,20 @@ export class AiClient implements AiSource {
       aiConfig,
     );
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.config.apiKey}`,
+    };
+    if (this.sessionId) {
+      headers['x-opencode-session'] = this.sessionId;
+      headers['User-Agent'] = 'git-ai/1.0';
+    }
+
     let res: Response;
     try {
       res = await fetch(`${this.config.baseUrl}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.config.apiKey}`,
-        },
+        headers,
         body: JSON.stringify({
           model: this.config.model,
           messages: [{ role: 'user', content: prompt }],
